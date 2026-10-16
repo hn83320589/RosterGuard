@@ -1,6 +1,7 @@
 using RosterGuard.Core.Candidates;
 using RosterGuard.Core.Domain;
 using RosterGuard.Core.Session;
+using RosterGuard.Core.Tests.History;
 using static RosterGuard.Core.Tests.TestData;
 
 namespace RosterGuard.Core.Tests.Candidates;
@@ -19,8 +20,8 @@ public class CandidateFinderTests
         return store;
     }
 
-    private static CandidateResult Find(FakeRosterStore store) =>
-        new RosterSession(store, 2026, 10).FindCandidates(Slot);
+    private static CandidateResult Find(FakeRosterStore store, StaffingSlot? slot = null) =>
+        new RosterSession(store, 2026, 10).FindCandidates(slot ?? Slot);
 
     [Fact]
     public void Lists_only_employees_whose_assignment_creates_no_new_violation()
@@ -94,6 +95,55 @@ public class CandidateFinderTests
         var result = Find(store);
 
         Assert.Single(result.Candidates);
+    }
+
+    [Theory]
+    [InlineData(12)] // 缺口早於既有班
+    [InlineData(15)] // 缺口在既有班之間
+    [InlineData(17)] // 缺口晚於既有班
+    public void Employee_already_over_weekly_limit_is_blocked_wherever_the_slot_falls_in_that_week(int day)
+    {
+        var store = Store(Employee(1, "甲", weeklyLimitHours: 20));
+        store.Assignments.Add(new Assignment(1, D(10, 13), Morning));
+        store.Assignments.Add(new Assignment(1, D(10, 14), Morning));
+        store.Assignments.Add(new Assignment(1, D(10, 16), Morning)); // 已 24h > 20h
+
+        var result = Find(store, Slot with { Date = D(10, day) });
+
+        Assert.Empty(result.Candidates);
+        Assert.Equal("全部候選人都會違反週工時規則", result.NoCandidateReason);
+    }
+
+    [Fact]
+    public void Over_limit_in_another_week_does_not_block()
+    {
+        var store = Store(Employee(1, "甲", weeklyLimitHours: 20));
+        store.AssignmentsFromDays(1, Morning, D(10, 5), 3); // 10/5 週已 24h
+
+        Assert.Single(Find(store).Candidates);
+    }
+
+    [Fact]
+    public void Week_over_limit_because_of_next_month_shift_blocks_slot_at_month_end()
+    {
+        var store = Store(Employee(1, "甲", weeklyLimitHours: 20));
+        store.Assignments.Add(new Assignment(1, D(10, 26), Morning));
+        store.Assignments.Add(new Assignment(1, D(11, 1), Morning)); // 指派 10/31 後，跨過上限的是 11/1 這班
+
+        var result = Find(store, Slot with { Date = D(10, 31) });
+
+        Assert.Equal("全部候選人都會違反週工時規則", result.NoCandidateReason);
+    }
+
+    [Fact]
+    public void Employee_already_missing_a_rest_day_is_not_offered_the_next_day()
+    {
+        var store = Store(Employee(1, "甲"));
+        store.AssignmentsFromDays(1, Morning, D(10, 8), 7); // 10/8–10/14 已連上 7 天
+
+        var result = Find(store); // 10/15 會是第 8 天
+
+        Assert.Equal("全部候選人都會違反休息日規則", result.NoCandidateReason);
     }
 
     [Fact]

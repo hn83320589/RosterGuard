@@ -13,7 +13,10 @@ public sealed record Candidate(Employee Employee, int MonthMinutes);
 /// <param name="NoCandidateReason">沒有候選人時的原因，否則為 null。</param>
 public sealed record CandidateResult(IReadOnlyList<Candidate> Candidates, string? NoCandidateReason);
 
-/// <summary>找出「指派後不會產生任何新違規」的員工。</summary>
+/// <summary>
+/// 找出指派後不會讓情況變糟的員工：不產生新的違規，而且這一格不會落在該員工任何違規的範圍內。
+/// 後者擋下「已經超時／已經連上 7 天還再加一班」的人；只比對違規鍵的話，加班後鍵可能不變。
+/// </summary>
 public sealed class CandidateFinder(Func<IEnumerable<Assignment>, IReadOnlyList<Violation>> evaluate)
 {
     public CandidateResult Find(
@@ -41,7 +44,9 @@ public sealed class CandidateFinder(Func<IEnumerable<Assignment>, IReadOnlyList<
         foreach (var employee in pool)
         {
             var proposed = new Assignment(employee.Id, slot.Date, slot.ShiftTypeId);
-            var firstNew = evaluate(current.Append(proposed)).FirstOrDefault(v => !before.Contains(v.Key));
+            var cell = new CellRef(employee.Id, slot.Date);
+            var firstNew = evaluate(current.Append(proposed)).FirstOrDefault(v =>
+                !before.Contains(v.Key) || (v.Key.EmployeeId == employee.Id && v.Cells.Contains(cell)));
             if (firstNew is null)
             {
                 accepted.Add(new Candidate(employee, MonthMinutes(employee.Id, current, shiftTypes, monthStart, monthEnd)));

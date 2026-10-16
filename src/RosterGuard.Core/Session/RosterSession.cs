@@ -98,9 +98,21 @@ public sealed class RosterSession
             .Select(a => _shiftTypes.First(s => s.Id == a.ShiftTypeId))
             .OrderBy(s => s.Start).ThenBy(s => s.Id).ToList();
 
-    /// <summary>評估「假設狀態」的違規，用於候選人建議。</summary>
+    /// <summary>評估指定狀態在本月的違規。</summary>
     public IReadOnlyList<Violation> Evaluate(IEnumerable<Assignment> assignments) =>
         _engine.Evaluate(BuildContext(assignments));
+
+    /// <summary>
+    /// 以某日為中心評估（回報 ±7 天、讀入 ±14 天），用於候選人建議：
+    /// 缺口在月底時，跨到下個月的那週也要完整判定。
+    /// </summary>
+    private IReadOnlyList<Violation> EvaluateAround(DateOnly date, IEnumerable<Assignment> assignments)
+    {
+        var from = date.AddDays(-2 * ContextDays);
+        var to = date.AddDays(2 * ContextDays);
+        return _engine.Evaluate(new RosterContext(_employees, _shiftTypes, Settings,
+            assignments.Where(a => a.Date >= from && a.Date <= to), date.AddDays(-ContextDays), date.AddDays(ContextDays)));
+    }
 
     public RosterContext BuildContext(IEnumerable<Assignment> assignments)
     {
@@ -111,7 +123,7 @@ public sealed class RosterSession
     }
 
     public CandidateResult FindCandidates(StaffingSlot slot) =>
-        new CandidateFinder(Evaluate).Find(slot, _employees, ShiftTypeMap(), _assignments, Month, MonthEnd);
+        new CandidateFinder(a => EvaluateAround(slot.Date, a)).Find(slot, _employees, ShiftTypeMap(), _assignments, Month, MonthEnd);
 
     public int MonthMinutes(int employeeId) =>
         CandidateFinder.MonthMinutes(employeeId, _assignments, ShiftTypeMap(), Month, MonthEnd);
