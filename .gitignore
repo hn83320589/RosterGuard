@@ -482,3 +482,7 @@ $RECYCLE.BIN/
 
 # Vim temporary swap files
 *.swp
+
+# The macOS *.app rule above also matches our project folder name
+!src/RosterGuard.App/
+
