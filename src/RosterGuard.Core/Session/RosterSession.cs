@@ -64,6 +64,18 @@ public sealed class RosterSession
 
     public string? RedoDescription => _history.TryPeekRedo(out var e) ? e.Description : null;
 
+    /// <summary>重新從儲存區載入所有資料並清空復原歷史（例如重設為範例資料後）。</summary>
+    public void Reload()
+    {
+        _employees = _store.LoadEmployees().ToList();
+        _shiftTypes = _store.LoadShiftTypes().ToList();
+        _assignments.Clear();
+        _assignments.UnionWith(_store.LoadAssignments());
+        Settings = _store.LoadSettings();
+        _history.Clear();
+        Recompute();
+    }
+
     public void SetMonth(int year, int month)
     {
         Month = new DateOnly(year, month, 1);

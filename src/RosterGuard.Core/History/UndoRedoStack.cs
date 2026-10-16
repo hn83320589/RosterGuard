@@ -28,6 +28,12 @@ public sealed class UndoRedoStack<T>
         _redo.Clear();
     }
 
+    public void Clear()
+    {
+        _undo.Clear();
+        _redo.Clear();
+    }
+
     public bool TryPeekUndo(out T item)
     {
         item = CanUndo ? _undo.Last!.Value : default!;

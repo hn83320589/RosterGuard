@@ -198,6 +198,21 @@ public class RosterSessionTests
     }
 
     [Fact]
+    public void Reload_reads_storage_again_and_clears_history()
+    {
+        var store = Store();
+        var session = Session(store);
+        session.Execute(new AssignCommand(new Assignment(1, D(10, 1), Morning)));
+        store.Assignments.Clear();
+        store.Assignments.Add(new Assignment(2, D(10, 9), Morning));
+
+        session.Reload();
+
+        Assert.Equal([new Assignment(2, D(10, 9), Morning)], session.AssignmentsInMonth());
+        Assert.False(session.CanUndo);
+    }
+
+    [Fact]
     public void Changing_min_rest_setting_recomputes_violations()
     {
         var session = Session(Store());
