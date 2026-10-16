@@ -22,7 +22,7 @@ dotnet publish src/RosterGuard.App -c Release -r win-x64 --self-contained true `
 | win-x64 單一執行檔發佈 | ✅ `RosterGuard.exe` 約 95 MB；正常資料庫可開啟主視窗，損毀資料庫會顯示錯誤視窗（見 4.2） |
 | GitHub Actions | ✅ [run 38862401106](https://github.com/hn83320589/RosterGuard/actions/runs/38862401106)（commit `6578cbe`，windows-latest）全部步驟成功，artifact：`RosterGuard-win-x64`（42 MB，zip 壓縮後）、`test-results`。截圖見 4.3 |
 | CSV 以 Excel 開啟 | ✅ 實際以 Excel 16.0 開啟，中文正確（見 4.1） |
-| ICS 以 Outlook 開啟 | ⚠️ 未完成：本機 Outlook 沒有設定郵件設定檔，連標準的最小 ICS 也無法開啟（見 4.1） |
+| ICS 匯入行事曆 | ✅ 匯入 Google 日曆成功，中文標題與跨午夜起訖正確（見 4.1）。Outlook 因本機沒有郵件設定檔無法測試 |
 
 ## 2. 審查後修正
 
@@ -74,7 +74,14 @@ dotnet publish src/RosterGuard.App -c Release -r win-x64 --self-contained true `
 
 共 10 列（表頭＋9 位員工）、35 欄（3 欄基本資料＋31 天＋本月工時），中文無亂碼。
 
-**ICS → Outlook**：以 `Namespace.OpenSharedItem` 開啟（只開不存，不寫入行事曆）。依序試了三次：完整檔、只含一筆事件的檔案、手寫的最小標準 ICS，三次都失敗（「路徑或 URL 無效」「作業失敗」）。原因是本機 Outlook 沒有郵件設定檔（`Stores = 0`），與檔案格式無關。ICS 的格式正確性目前由 `IcsExporterTests` 以 Ical.Net 解析驗證；第一筆事件的內容如下：
+**ICS → Google 日曆**：在 Google 日曆建立一個暫時的「RosterGuard 測試」日曆，以「設定 → 匯入/匯出」把 `employee.ics` 匯入這個日曆（不動主要日曆），驗證完後整個日曆刪除。2026-09-02 那一筆打烊班的事件詳細資訊如下（截圖已裁掉帳號資訊）：
+
+![Google 日曆匯入後的事件：打烊班，2026年9月2日 下午6:00 – 2026年9月3日 上午2:00，說明為林建宏（內場）18:00–02:00](screenshots/ics-google-calendar.png)
+
+- 標題「打烊班」與說明「林建宏（內場）18:00–02:00」中文正常。
+- 起訖為 9/2 18:00 到 9/3 02:00，跨午夜的結束日期正確落在隔天，時區（Asia/Taipei）正確。
+
+**ICS → Outlook**：以 `Namespace.OpenSharedItem` 開啟（只開不存，不寫入行事曆）。依序試了三次：完整檔、只含一筆事件的檔案、手寫的最小標準 ICS，三次都失敗（「路徑或 URL 無效」「作業失敗」）。原因是本機 Outlook 沒有郵件設定檔（`Stores = 0`），與檔案格式無關。ICS 第一筆事件的原始內容如下：
 
 ```
 DTSTART;TZID=Asia/Taipei:20260902T180000
@@ -112,7 +119,7 @@ DESCRIPTION:林建宏（內場）18:00–02:00
 | 10 | 候選人只列不產生新違規者，排序穩定，無人時顯示原因 | 單元測試 | `CandidateFinderTests`（16 個，含審查後補的對稱性測試） | ✅ |
 | 11 | 撤銷／重做 ≥20 層、同步還原、新操作清空 redo | 單元測試＋實測 | `RosterSessionTests.At_least_20_levels_can_be_undone`、`Undo_restores_assignments_and_violations`、`New_operation_after_undo_clears_redo` | ✅ 單元測試／🟡 待人工實測 |
 | 12 | 各月獨立儲存、可切換、重開不變 | 實測 | `SqliteRosterStoreTests.Session_months_survive_restart_independently`；`MainWindowTests.Switching_months…` | 🟡 自動化通過，待人工實測 |
-| 13 | CSV 用 Excel 開中文不亂碼；ICS 可被標準解析器讀取 | 測試＋實測 | CSV：Excel 16.0 實測（4.1）＋`Output_starts_with_utf8_bom…`；ICS：`Standard_parser_reads_events_with_chinese_titles…`（Ical.Net） | ✅ CSV／🟡 ICS 未在 Outlook 或 Google 日曆實測 |
+| 13 | CSV 用 Excel 開中文不亂碼；ICS 可被標準解析器讀取 | 測試＋實測 | CSV：Excel 16.0 實測（4.1）＋`Output_starts_with_utf8_bom…`；ICS：Google 日曆實測（4.1）＋`Standard_parser_reads_events_with_chinese_titles…`（Ical.Net） | ✅ CSV（Excel）／✅ ICS（Google 日曆） |
 | 14 | 單元測試 ≥40 個且全數通過 | 執行測試 | 115 個通過 | ✅ |
 | 15 | Headless 測試 ≥3 個，涵蓋啟動、指派、違規顯示 | 執行測試 | 8 個通過 | ✅ |
 | 16 | README 含建置、截圖、架構、規則說明、已知限制 | 檢視 README | `README.md`、`docs/screenshots/` | ✅ |
@@ -126,7 +133,7 @@ DESCRIPTION:林建宏（內場）18:00–02:00
 - [ ] 連續做 20 次以上指派，按 Ctrl+Z 全部撤銷再 Ctrl+Y 重做；撤銷後做新操作，確認無法再重做。（#11）
 - [ ] 在 9 月、10 月各改一格，切換月份並重開程式確認。（#12）
 - [x] 匯出 CSV 以 Excel 直接開啟。（#13，見 4.1）
-- [ ] 匯出 ICS 匯入 Outlook 或 Google 日曆，確認中文標題與跨午夜班的起訖時間。（#13）
+- [x] 匯出 ICS 匯入 Google 日曆，確認中文標題與跨午夜班的起訖時間。（#13，見 4.1）
 
 ## 7. 已知限制與注意事項
 
