@@ -1,6 +1,6 @@
 # 班表守門員 RosterGuard
 
-[![CI](https://github.com/OWNER/RosterGuard/actions/workflows/ci.yml/badge.svg)](https://github.com/OWNER/RosterGuard/actions/workflows/ci.yml)
+[![CI](https://github.com/hn83320589/RosterGuard/actions/workflows/ci.yml/badge.svg)](https://github.com/hn83320589/RosterGuard/actions/workflows/ci.yml)
 
 給小型餐飲店店長的桌面排班工具：**排的當下就看得到哪裡違規**，並在人力不足時列出「指派後不會產生任何新違規」的候選人。
 
@@ -37,7 +37,7 @@
 需求：Windows 10/11、[.NET 9 SDK](https://dotnet.microsoft.com/download/dotnet/9.0)。
 
 ```powershell
-git clone https://github.com/OWNER/RosterGuard.git
+git clone https://github.com/hn83320589/RosterGuard.git
 cd RosterGuard
 dotnet build -c Release
 dotnet test -c Release                          # 單元測試 + Avalonia Headless 測試
@@ -127,6 +127,7 @@ dotnet test
 
 - 單元測試 105 個（Core + SQLite 整合），涵蓋各規則邊界、跨日計算、候選人排序與原因、Undo/Redo（≥ 20 層、redo 清空、撤銷後違規還原）、CSV／ICS。
 - Avalonia Headless 測試 5 個（另有 1 個預設不執行的截圖產生器）。
+- 驗收標準逐項對照與人工實測清單見 [docs/test-report.md](docs/test-report.md)。
 
 ## CI
 
