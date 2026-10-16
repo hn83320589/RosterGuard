@@ -1,7 +1,41 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:RosterGuard.App.ViewModels"
+        xmlns:views="using:RosterGuard.App.Views"
         x:Class="RosterGuard.App.Views.MainWindow"
+        x:DataType="vm:MainWindowViewModel"
         Title="班表守門員 RosterGuard"
-        Width="1280" Height="800">
-  <TextBlock Name="Placeholder" Text="RosterGuard" Margin="16" />
+        Width="1440" Height="860" MinWidth="960" MinHeight="600"
+        WindowStartupLocation="CenterScreen">
+
+  <Window.KeyBindings>
+    <KeyBinding Gesture="Ctrl+Z" Command="{Binding Roster.UndoCommand}" />
+    <KeyBinding Gesture="Ctrl+Y" Command="{Binding Roster.RedoCommand}" />
+  </Window.KeyBindings>
+
+  <DockPanel>
+    <!-- 狀態列 -->
+    <Border DockPanel.Dock="Bottom" Background="#ECEFF1" Padding="10,4">
+      <Grid ColumnDefinitions="Auto,*,Auto">
+        <TextBlock Grid.Column="0" Name="StatusViolationText" Text="{Binding Roster.ViolationSummary}" FontWeight="SemiBold" />
+        <TextBlock Grid.Column="1" Name="ErrorText" Text="{Binding ErrorMessage}" Foreground="Firebrick" Margin="16,0" TextTrimming="CharacterEllipsis" />
+        <TextBlock Grid.Column="2" Text="{Binding StatusText}" Foreground="Gray" />
+      </Grid>
+    </Border>
+
+    <TabControl Name="MainTabs" Padding="0">
+      <TabItem Header="月班表">
+        <views:RosterView Name="Roster" DataContext="{Binding Roster}" />
+      </TabItem>
+      <TabItem Header="員工">
+        <views:EmployeesView DataContext="{Binding Employees}" />
+      </TabItem>
+      <TabItem Header="班別">
+        <views:ShiftTypesView DataContext="{Binding ShiftTypes}" />
+      </TabItem>
+      <TabItem Header="設定">
+        <views:SettingsView DataContext="{Binding Settings}" />
+      </TabItem>
+    </TabControl>
+  </DockPanel>
 </Window>

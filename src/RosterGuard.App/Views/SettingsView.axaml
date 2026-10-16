@@ -1,0 +1,29 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:RosterGuard.App.ViewModels"
+             x:Class="RosterGuard.App.Views.SettingsView"
+             x:DataType="vm:SettingsViewModel">
+  <StackPanel Margin="24" Spacing="10" MaxWidth="560" HorizontalAlignment="Left">
+    <TextBlock Text="規則設定" FontSize="18" FontWeight="SemiBold" />
+    <TextBlock Text="最小間隔（小時）：同一員工前一班結束到下一班開始至少需間隔的時數。" TextWrapping="Wrap" />
+    <StackPanel Orientation="Horizontal" Spacing="8">
+      <NumericUpDown Name="MinRestBox" Value="{Binding MinRestHours}" Minimum="0" Maximum="24" Increment="0.5" FormatString="0.#" Width="160" />
+      <Button Name="SaveSettingsButton" Content="儲存" Command="{Binding SaveCommand}" Classes="accent" />
+    </StackPanel>
+    <TextBlock Text="「連續 7 日至少 1 個休息日」為固定規則，不可調整；每週工時上限在員工資料設定。"
+               Foreground="Gray" FontSize="12" TextWrapping="Wrap" />
+
+    <Separator Margin="0,16" />
+
+    <TextBlock Text="範例資料" FontSize="18" FontWeight="SemiBold" />
+    <TextBlock Text="清除目前所有員工、班別、設定與班表，改為載入 9 位員工、3 個班別與 2026 年 9–10 月的範例班表（刻意含各類違規，對照 samples/expected-violations.md）。"
+               TextWrapping="Wrap" />
+    <Button Name="ResetButton" Content="重設為範例資料…" Command="{Binding RequestResetCommand}"
+            IsVisible="{Binding !IsConfirmingReset}" IsEnabled="{Binding CanReset}" />
+    <StackPanel Orientation="Horizontal" Spacing="8" IsVisible="{Binding IsConfirmingReset}">
+      <TextBlock Text="確定要清除所有資料嗎？此動作無法復原。" Foreground="Firebrick" VerticalAlignment="Center" />
+      <Button Name="ConfirmResetButton" Content="確定重設" Command="{Binding ConfirmResetCommand}" />
+      <Button Content="取消" Command="{Binding CancelResetCommand}" />
+    </StackPanel>
+  </StackPanel>
+</UserControl>

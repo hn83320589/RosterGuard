@@ -1,0 +1,55 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:RosterGuard.App.ViewModels"
+             xmlns:core="using:RosterGuard.Core.Domain"
+             x:Class="RosterGuard.App.Views.ShiftTypesView"
+             x:DataType="vm:ShiftTypesViewModel">
+  <Grid ColumnDefinitions="360,*" Margin="12">
+    <DockPanel Grid.Column="0">
+      <Button DockPanel.Dock="Top" Name="NewShiftButton" Content="＋ 新增班別" Command="{Binding NewCommand}" Margin="0,0,0,8" />
+      <ListBox Name="ShiftList" ItemsSource="{Binding Items}" SelectedItem="{Binding Selected}">
+        <ListBox.ItemTemplate>
+          <DataTemplate x:DataType="core:ShiftType">
+            <StackPanel Orientation="Horizontal" Spacing="8">
+              <TextBlock Text="{Binding Name}" FontWeight="SemiBold" />
+              <TextBlock Text="{Binding Start, StringFormat='{}{0:HH:mm}'}" Foreground="Gray" />
+              <TextBlock Text="–" Foreground="Gray" />
+              <TextBlock Text="{Binding End, StringFormat='{}{0:HH:mm}'}" Foreground="Gray" />
+              <TextBlock Text="停用" Foreground="Firebrick" IsVisible="{Binding !IsActive}" />
+            </StackPanel>
+          </DataTemplate>
+        </ListBox.ItemTemplate>
+      </ListBox>
+    </DockPanel>
+
+    <StackPanel Grid.Column="1" Margin="24,0,0,0" Spacing="10" MaxWidth="480" HorizontalAlignment="Left">
+      <TextBlock Text="{Binding EditTitle}" FontSize="18" FontWeight="SemiBold" />
+      <TextBlock Text="名稱" />
+      <TextBox Name="ShiftNameBox" Text="{Binding Name}" />
+      <StackPanel Orientation="Horizontal" Spacing="12">
+        <StackPanel Spacing="4">
+          <TextBlock Text="開始（HH:mm）" />
+          <TextBox Name="ShiftStartBox" Text="{Binding StartText}" Width="100" />
+        </StackPanel>
+        <StackPanel Spacing="4">
+          <TextBlock Text="結束（HH:mm）" />
+          <TextBox Name="ShiftEndBox" Text="{Binding EndText}" Width="100" />
+        </StackPanel>
+      </StackPanel>
+      <TextBlock Text="{Binding DurationText}" Foreground="Gray" />
+      <TextBlock Text="結束時間早於或等於開始時間代表跨到隔天（例如 18:00 到 02:00）。" FontSize="12" Foreground="Gray" TextWrapping="Wrap" />
+      <StackPanel Orientation="Horizontal" Spacing="12">
+        <StackPanel Spacing="4">
+          <TextBlock Text="內場需求人數" />
+          <NumericUpDown Value="{Binding RequiredKitchen}" Minimum="0" Maximum="20" Increment="1" FormatString="0" Width="140" />
+        </StackPanel>
+        <StackPanel Spacing="4">
+          <TextBlock Text="外場需求人數" />
+          <NumericUpDown Value="{Binding RequiredFloor}" Minimum="0" Maximum="20" Increment="1" FormatString="0" Width="140" />
+        </StackPanel>
+      </StackPanel>
+      <CheckBox Content="啟用（停用後不出現在新排班選單、不檢查人力，歷史班表保留）" IsChecked="{Binding IsActive}" />
+      <Button Name="SaveShiftButton" Content="儲存" Command="{Binding SaveCommand}" Classes="accent" />
+    </StackPanel>
+  </Grid>
+</UserControl>

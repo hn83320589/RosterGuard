@@ -1,0 +1,49 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:RosterGuard.App.ViewModels"
+             xmlns:core="using:RosterGuard.Core.Domain"
+             xmlns:app="using:RosterGuard.App"
+             x:Class="RosterGuard.App.Views.EmployeesView"
+             x:DataType="vm:EmployeesViewModel">
+  <Grid ColumnDefinitions="360,*" Margin="12">
+    <DockPanel Grid.Column="0">
+      <Button DockPanel.Dock="Top" Name="NewEmployeeButton" Content="＋ 新增員工" Command="{Binding NewCommand}" Margin="0,0,0,8" />
+      <ListBox Name="EmployeeList" ItemsSource="{Binding Items}" SelectedItem="{Binding Selected}">
+        <ListBox.ItemTemplate>
+          <DataTemplate x:DataType="core:Employee">
+            <StackPanel Orientation="Horizontal" Spacing="8">
+              <TextBlock Text="{Binding Name}" FontWeight="SemiBold" />
+              <TextBlock Text="{Binding Role, Converter={x:Static app:Converters.Chinese}}" Foreground="Gray" />
+              <TextBlock Text="停用" Foreground="Firebrick" IsVisible="{Binding !IsActive}" />
+            </StackPanel>
+          </DataTemplate>
+        </ListBox.ItemTemplate>
+      </ListBox>
+    </DockPanel>
+
+    <StackPanel Grid.Column="1" Margin="24,0,0,0" Spacing="10" MaxWidth="480" HorizontalAlignment="Left">
+      <TextBlock Text="{Binding EditTitle}" FontSize="18" FontWeight="SemiBold" />
+      <TextBlock Text="姓名" />
+      <TextBox Name="EmployeeNameBox" Text="{Binding Name}" />
+      <TextBlock Text="職稱" />
+      <ComboBox ItemsSource="{Binding Roles}" SelectedItem="{Binding Role}" MinWidth="160" />
+      <TextBlock Text="類型" />
+      <ComboBox ItemsSource="{Binding Types}" SelectedItem="{Binding Type}" MinWidth="160" />
+      <TextBlock Text="每週工時上限（小時）" />
+      <NumericUpDown Value="{Binding WeeklyLimitHours}" Minimum="0.5" Maximum="168" Increment="0.5" FormatString="0.#" Width="160" HorizontalAlignment="Left" />
+      <TextBlock Text="固定不可上班的星期" />
+      <ItemsControl ItemsSource="{Binding UnavailableDays}">
+        <ItemsControl.ItemsPanel>
+          <ItemsPanelTemplate><StackPanel Orientation="Horizontal" Spacing="4" /></ItemsPanelTemplate>
+        </ItemsControl.ItemsPanel>
+        <ItemsControl.ItemTemplate>
+          <DataTemplate x:DataType="vm:WeekdayChoice">
+            <CheckBox Content="{Binding Label}" IsChecked="{Binding IsChecked}" />
+          </DataTemplate>
+        </ItemsControl.ItemTemplate>
+      </ItemsControl>
+      <CheckBox Content="在職（取消勾選即停用：不出現在新排班選單，歷史班表保留）" IsChecked="{Binding IsActive}" />
+      <Button Name="SaveEmployeeButton" Content="儲存" Command="{Binding SaveCommand}" Classes="accent" />
+    </StackPanel>
+  </Grid>
+</UserControl>
