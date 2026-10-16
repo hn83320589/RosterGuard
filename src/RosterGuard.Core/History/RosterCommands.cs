@@ -41,7 +41,7 @@ public sealed record UnassignCommand(Assignment Assignment) : IRosterCommand
 
 /// <summary>
 /// 複製上週：先清空目標週，再把來源週的指派平移過去。
-/// 只處理落在 [LimitFrom, LimitTo]（目前月份）內的目標日期，並略過停用的員工與班別。
+/// 只處理落在 [LimitFrom, LimitTo]（目前月份）內的目標日期；停用員工與班別的指派不複製，目標週裡的也保留不清除。
 /// </summary>
 public sealed class CopyWeekCommand : IRosterCommand
 {
@@ -76,10 +76,11 @@ public sealed class CopyWeekCommand : IRosterCommand
     {
         var offset = _targetMonday.DayNumber - _sourceMonday.DayNumber;
 
-        var removed = current.Where(a => InTargetWeek(a.Date)).ToHashSet();
+        // 停用員工或班別的歷史指派不會被複製回來，所以也不清除
+        var removed = current.Where(a => InTargetWeek(a.Date) && IsActive(a)).ToHashSet();
         var added = current
             .Where(a => a.Date >= _sourceMonday && a.Date < _sourceMonday.AddDays(7))
-            .Where(a => _activeEmployeeIds.Contains(a.EmployeeId) && _activeShiftTypeIds.Contains(a.ShiftTypeId))
+            .Where(IsActive)
             .Select(a => a with { Date = a.Date.AddDays(offset) })
             .Where(a => InTargetWeek(a.Date))
             .ToHashSet();
@@ -91,6 +92,9 @@ public sealed class CopyWeekCommand : IRosterCommand
 
         return new RosterDelta(Sorted(added), Sorted(removed));
     }
+
+    private bool IsActive(Assignment a) =>
+        _activeEmployeeIds.Contains(a.EmployeeId) && _activeShiftTypeIds.Contains(a.ShiftTypeId);
 
     private bool InTargetWeek(DateOnly date) =>
         date >= _targetMonday && date < _targetMonday.AddDays(7) && date >= _limitFrom && date <= _limitTo;

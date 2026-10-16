@@ -51,6 +51,23 @@ public class CopyWeekCommandTests
     }
 
     [Fact]
+    public void Target_week_history_of_inactive_employees_and_shift_types_is_kept()
+    {
+        var store = Store();
+        store.Assignments.Add(new Assignment(1, D(10, 12), Morning));
+        store.Assignments.Add(new Assignment(3, D(10, 20), Morning)); // 停用員工在目標週的歷史
+        store.Assignments.Add(new Assignment(2, D(10, 21), Retired)); // 停用班別在目標週的歷史
+        store.Assignments.Add(new Assignment(2, D(10, 22), Morning)); // 一般指派照常被覆蓋
+        var session = new RosterSession(store, 2026, 10);
+
+        session.Execute(session.CopyWeek(D(10, 12), D(10, 19)));
+
+        Assert.Equal(
+            [new Assignment(1, D(10, 19), Morning), new Assignment(3, D(10, 20), Morning), new Assignment(2, D(10, 21), Retired)],
+            session.AssignmentsInMonth().Where(a => a.Date >= D(10, 19)).OrderBy(a => a.Date).ToList());
+    }
+
+    [Fact]
     public void Only_target_days_inside_the_current_month_are_touched()
     {
         var store = Store();
