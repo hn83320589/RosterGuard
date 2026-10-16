@@ -38,6 +38,41 @@ public sealed class StartupErrorTests : IDisposable
         Assert.Contains("版本不符", StartupErrorViewModel.Describe(new UnsupportedSchemaException("v99")));
     }
 
+    public static TheoryData<Exception, bool> RebuildCases => new()
+    {
+        { new SqliteException("not a database", 26), true },
+        { new SqliteException("malformed", 11), true },
+        { new UnsupportedSchemaException("v99"), true },
+        { new SqliteException("busy", 5), false },
+        { new SqliteException("locked", 6), false },
+        { new SqliteException("readonly", 8), false },
+        { new SqliteException("cantopen", 14), false },
+        { new UnauthorizedAccessException("denied"), false },
+        { new IOException("in use"), false },
+    };
+
+    [Theory]
+    [MemberData(nameof(RebuildCases))]
+    public void Rebuild_is_offered_only_when_the_file_itself_is_unusable(Exception error, bool expected)
+    {
+        var vm = new StartupErrorViewModel(DbPath, error, Open);
+
+        Assert.Equal(expected, vm.CanRebuild);
+        Assert.Equal(expected, vm.BackupAndRebuildCommand.CanExecute(null));
+    }
+
+    [AvaloniaFact]
+    public void Locked_database_hides_the_rebuild_button()
+    {
+        var window = new StartupErrorWindow { DataContext = new StartupErrorViewModel(DbPath, new SqliteException("busy", 5), Open) };
+        window.Show();
+        MainWindowFixture.Pump();
+
+        Assert.False(Find<Button>(window, "BackupAndRebuildButton").IsVisible);
+        Assert.True(Find<Button>(window, "RetryButton").IsVisible);
+        window.Close();
+    }
+
     [AvaloniaFact]
     public void Corrupted_database_shows_error_window_and_backup_and_rebuild_opens_sample_data()
     {

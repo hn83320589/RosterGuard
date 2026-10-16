@@ -15,10 +15,18 @@ public sealed partial class StartupErrorViewModel(
 
     [ObservableProperty] private string _message = Describe(error);
 
+    /// <summary>只有檔案本身不能用（損毀、不是資料庫、版本不符）才提供重建；被鎖定或沒有權限時，檔案通常是好的。</summary>
+    [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(BackupAndRebuildCommand))]
+    private bool _canRebuild = IsFileUnusable(error);
+
     /// <summary>成功開啟資料庫，參數為主視窗的 ViewModel。</summary>
     public event EventHandler<MainWindowViewModel>? Opened;
 
     public event EventHandler? ExitRequested;
+
+    public static bool IsFileUnusable(Exception ex) =>
+        ex is SqliteException { SqliteErrorCode: SqliteNotADatabase or SqliteCorrupt } or UnsupportedSchemaException;
 
     public static string Describe(Exception ex)
     {
@@ -40,7 +48,7 @@ public sealed partial class StartupErrorViewModel(
     [RelayCommand]
     private void Retry() => TryOpen(() => open(DatabasePath));
 
-    [RelayCommand]
+    [RelayCommand(CanExecute = nameof(CanRebuild))]
     private void BackupAndRebuild() => TryOpen(() =>
     {
         SqliteRosterStore.MoveAside(DatabasePath, DateTime.Now);
@@ -59,6 +67,7 @@ public sealed partial class StartupErrorViewModel(
         catch (Exception ex) when (AppBootstrapper.IsDatabaseOpenFailure(ex))
         {
             Message = Describe(ex);
+            CanRebuild = IsFileUnusable(ex);
         }
     }
 }

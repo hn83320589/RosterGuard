@@ -15,7 +15,7 @@
     </StackPanel>
     <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8" Margin="0,8,0,0">
       <Button Name="RetryButton" Content="重試" Command="{Binding RetryCommand}" />
-      <Button Name="BackupAndRebuildButton" Content="舊檔改名保留並重建" Command="{Binding BackupAndRebuildCommand}" />
+      <Button Name="BackupAndRebuildButton" Content="舊檔改名保留並重建" Command="{Binding BackupAndRebuildCommand}" IsVisible="{Binding CanRebuild}" />
       <Button Name="ExitButton" Content="結束" Command="{Binding ExitCommand}" />
     </StackPanel>
   </StackPanel>
