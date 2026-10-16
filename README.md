@@ -63,6 +63,10 @@ dotnet publish src/RosterGuard.App/RosterGuard.App.csproj -c Release -r win-x64 
 4. **補人力**：格網下方「人力（已排/需求）」列紅底為不足、綠底為超額；點格子即在右下列出候選人，按「指派」完成。
 5. **複製上週**：工具列選來源週 → 目標週，按「複製上週」。
 6. **匯出**：「匯出月班表 CSV」匯出目前月份；選擇員工後按「匯出個人 ICS」。
+7. **資料庫打不開時**：啟動時若資料庫損毀、版本不符、被其他程式鎖定或無法存取，會顯示說明視窗而不是直接結束：
+   - 「重試」：例如關掉另一個開著的 RosterGuard 後再試。
+   - 「舊檔改名保留並重建」：把舊檔改名為 `rosterguard.db.broken-日期-時間`，留在原資料夾，再建立新的資料庫並載入範例資料。舊檔不會被刪除。
+   - 「結束」。
 
 ---
 
@@ -125,8 +129,8 @@ RosterGuard.App  (Avalonia 11, MVVM)  ──►  RosterGuard.Data (Microsoft.Dat
 dotnet test
 ```
 
-- 單元測試 112 個（Core + SQLite 整合），涵蓋各規則邊界、跨日計算、候選人排序與原因、Undo/Redo（≥ 20 層、redo 清空、撤銷後違規還原）、CSV／ICS。
-- Avalonia Headless 測試 5 個（另有 1 個預設不執行的截圖產生器）。
+- 單元測試 115 個（Core + SQLite 整合），涵蓋各規則邊界、跨日計算、候選人排序與原因、Undo/Redo（≥ 20 層、redo 清空、撤銷後違規還原）、CSV／ICS。
+- App 測試 12 個：Avalonia Headless 7 個（主視窗 5 個、啟動錯誤視窗 2 個），啟動錯誤訊息的單元測試 5 個；另有 1 個預設不執行的截圖產生器。
 - 驗收標準逐項對照與人工實測清單見 [docs/test-report.md](docs/test-report.md)。
 
 ## CI

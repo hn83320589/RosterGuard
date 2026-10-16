@@ -31,6 +31,48 @@ public sealed class SqliteRosterStoreTests : IDisposable
     }
 
     [Fact]
+    public void Corrupted_file_fails_with_sqlite_exception()
+    {
+        Directory.CreateDirectory(_dir);
+        File.WriteAllText(DbPath, "這不是 SQLite 檔案，這不是 SQLite 檔案，這不是 SQLite 檔案");
+
+        Assert.Throws<SqliteException>(() => new SqliteRosterStore(DbPath));
+    }
+
+    [Fact]
+    public void Unsupported_schema_version_fails_with_a_message_naming_the_version()
+    {
+        new SqliteRosterStore(DbPath);
+        using (var connection = new SqliteConnection($"Data Source={DbPath};Pooling=False"))
+        {
+            connection.Open();
+            using var cmd = connection.CreateCommand();
+            cmd.CommandText = "PRAGMA user_version = 99";
+            cmd.ExecuteNonQuery();
+        }
+
+        var ex = Assert.Throws<UnsupportedSchemaException>(() => new SqliteRosterStore(DbPath));
+        Assert.Contains("99", ex.Message);
+    }
+
+    [Fact]
+    public void Move_aside_keeps_the_old_file_and_lets_a_new_database_be_created()
+    {
+        Directory.CreateDirectory(_dir);
+        File.WriteAllText(DbPath, "壞掉的檔案");
+        File.WriteAllText(DbPath + "-journal", "journal");
+
+        var backup = SqliteRosterStore.MoveAside(DbPath, new DateTime(2026, 10, 16, 13, 5, 9));
+
+        Assert.Equal(DbPath + ".broken-20261016-130509", backup);
+        Assert.Equal("壞掉的檔案", File.ReadAllText(backup));
+        Assert.Equal("journal", File.ReadAllText(backup + "-journal"));
+        Assert.False(File.Exists(DbPath));
+        Assert.False(File.Exists(DbPath + "-journal"));
+        Assert.True(new SqliteRosterStore(DbPath).WasCreated);
+    }
+
+    [Fact]
     public void Employees_round_trip_and_new_ones_get_an_id()
     {
         var store = new SqliteRosterStore(DbPath);

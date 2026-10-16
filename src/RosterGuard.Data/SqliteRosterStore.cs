@@ -38,6 +38,24 @@ public sealed class SqliteRosterStore : IRosterStore
     public static string DefaultPath { get; } = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "RosterGuard", "rosterguard.db");
 
+    /// <summary>
+    /// 把無法開啟的資料庫（含 rollback journal）改名為 <c>{檔名}.broken-yyyyMMdd-HHmmss</c> 保留下來，
+    /// 讓同一路徑可以重新建立。回傳改名後的路徑。
+    /// </summary>
+    public static string MoveAside(string databasePath, DateTime now)
+    {
+        var backup = $"{databasePath}.broken-{now:yyyyMMdd-HHmmss}";
+        File.Move(databasePath, backup);
+
+        var journal = databasePath + "-journal";
+        if (File.Exists(journal))
+        {
+            File.Move(journal, backup + "-journal");
+        }
+
+        return backup;
+    }
+
     /// <summary>本次開啟時才建立資料庫（用於首次啟動載入範例資料）。</summary>
     public bool WasCreated { get; }
 
@@ -130,7 +148,7 @@ public sealed class SqliteRosterStore : IRosterStore
 
         if (version != 0)
         {
-            throw new InvalidOperationException($"不支援的資料庫版本 {version}（預期 {SchemaVersion}）：{connection.DataSource}");
+            throw new UnsupportedSchemaException($"不支援的資料庫版本 {version}（預期 {SchemaVersion}）：{connection.DataSource}");
         }
 
         using var tx = connection.BeginTransaction();

@@ -1,0 +1,22 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:RosterGuard.App.ViewModels"
+        x:Class="RosterGuard.App.Views.StartupErrorWindow"
+        x:DataType="vm:StartupErrorViewModel"
+        Title="RosterGuard 無法開啟資料庫"
+        Width="560" SizeToContent="Height" CanResize="False"
+        WindowStartupLocation="CenterScreen">
+  <StackPanel Margin="20" Spacing="12">
+    <TextBlock Text="無法開啟資料庫" FontSize="18" FontWeight="SemiBold" />
+    <TextBlock Name="MessageText" Text="{Binding Message}" TextWrapping="Wrap" />
+    <StackPanel Spacing="2">
+      <TextBlock Text="資料庫位置" Foreground="Gray" />
+      <SelectableTextBlock Name="PathText" Text="{Binding DatabasePath}" TextWrapping="Wrap" />
+    </StackPanel>
+    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8" Margin="0,8,0,0">
+      <Button Name="RetryButton" Content="重試" Command="{Binding RetryCommand}" />
+      <Button Name="BackupAndRebuildButton" Content="舊檔改名保留並重建" Command="{Binding BackupAndRebuildCommand}" />
+      <Button Name="ExitButton" Content="結束" Command="{Binding ExitCommand}" />
+    </StackPanel>
+  </StackPanel>
+</Window>
