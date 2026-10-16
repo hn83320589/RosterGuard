@@ -1,3 +1,4 @@
+using RosterGuard.Core.Candidates;
 using RosterGuard.Core.Domain;
 using RosterGuard.Core.History;
 using RosterGuard.Core.Rules;
@@ -96,6 +97,14 @@ public sealed class RosterSession
         return new RosterContext(_employees, _shiftTypes, Settings,
             assignments.Where(a => a.Date >= from && a.Date <= to), Month, MonthEnd);
     }
+
+    public CandidateResult FindCandidates(StaffingSlot slot) =>
+        new CandidateFinder(Evaluate).Find(slot, _employees, ShiftTypeMap(), _assignments, Month, MonthEnd);
+
+    public int MonthMinutes(int employeeId) =>
+        CandidateFinder.MonthMinutes(employeeId, _assignments, ShiftTypeMap(), Month, MonthEnd);
+
+    private Dictionary<int, ShiftType> ShiftTypeMap() => _shiftTypes.ToDictionary(s => s.Id);
 
     public IRosterCommand CopyWeek(DateOnly sourceMonday, DateOnly targetMonday) =>
         new CopyWeekCommand(sourceMonday, targetMonday, Month, MonthEnd,
