@@ -2,7 +2,7 @@
 
 - 日期：2026-10-16（審查後修正版）
 - 版本：`main` @ `6578cbe`
-- 環境：Windows 11 Pro 10.0.26200、.NET SDK 9.0.315、Microsoft Excel 16.0
+- 環境：Windows 11 Pro 10.0.26200、.NET SDK 9.0.315、Microsoft Excel 16.0、Google 日曆（網頁版）
 - 執行指令：
 
 ```powershell
@@ -23,6 +23,7 @@ dotnet publish src/RosterGuard.App -c Release -r win-x64 --self-contained true `
 | GitHub Actions | ✅ [run 38862401106](https://github.com/hn83320589/RosterGuard/actions/runs/38862401106)（commit `6578cbe`，windows-latest）全部步驟成功，artifact：`RosterGuard-win-x64`（42 MB，zip 壓縮後）、`test-results`。截圖見 4.3 |
 | CSV 以 Excel 開啟 | ✅ 實際以 Excel 16.0 開啟，中文正確（見 4.1） |
 | ICS 匯入行事曆 | ✅ 匯入 Google 日曆成功，中文標題與跨午夜起訖正確（見 4.1）。Outlook 因本機沒有郵件設定檔無法測試 |
+| 人工實測清單 #1、#3、#9、#11、#12 | ✅ 以 UI Automation 操作實際 exe，30 項檢查全部通過（見 4.4） |
 
 ## 2. 審查後修正
 
@@ -103,35 +104,51 @@ DESCRIPTION:林建宏（內場）18:00–02:00
 
 頁面上的 1 則 warning 是 GitHub 提示 `actions/checkout@v4`、`actions/setup-dotnet@v4` 等仍以 Node.js 20 為目標，不影響這次建置結果，本次未處理。
 
+### 4.4 人工實測清單（以 UI Automation 操作實際 exe）
+
+`tests/ui-walkthrough/` 的兩個腳本以 Windows UI Automation 操作發佈後的 `RosterGuard.exe`：點格子、勾選 Flyout 內的班別、按工具列按鈕、切換分頁、填表單、關閉再重開程式，並讀回畫面上的文字判定結果。每次都用暫存資料夾裡的新資料庫（範例資料）。共 30 項檢查全部 PASS：
+
+| # | 驗證內容 | 檢查數 | 結果 |
+|---|---|---:|---|
+| 1 | 新增員工 → 改名並把週工時上限改為 30 小時 → 新增「夜班」22:00–06:00 並改名「大夜班」 → 排一格大夜班 → 停用該員工與該班別 → **關閉重開**：員工與班別資料不變且為停用；10 月仍顯示該員工的列（標示「停用」）與歷史班表；該格選單把大夜班標為「（已停用）」，其他格子的選單沒有大夜班；11 月（沒有歷史）不出現該員工 | 13 | ✅ |
+| 3 | 同一格勾選早班＋午班，格子顯示兩班；取消早班後只剩午班 | 2 | ✅ |
+| 9 | 指派後狀態列違規數立即從 3 筆變 4 筆，取消後回到 3 筆；點「週工時超過上限」後格網水平捲動（0% → 29.2%），對應格子以藍框標示（下圖） | 3 | ✅ |
+| 11 | 連續 25 次指派 → 撤銷 25 次，全部 279 格與違規數都還原 → 重做 25 次 → 撤銷一步後做新操作，重做按鈕變成停用 | 6 | ✅ |
+| 12 | 9 月、10 月各改一格，來回切換月份內容不變，**關閉重開**後兩個月的修改都還在 | 6 | ✅ |
+
+![點選「週工時超過上限」後，格網捲動到 10/12–10/18 並以藍框標示李雅婷該週的格子](screenshots/walkthrough-violation-highlight.png)
+
+說明：這是以程式操作真實的視窗，判定依據是畫面上讀回的文字與捲動位置，不是人眼逐項確認；上面的截圖由我實際檢視過。
+
 ## 5. 驗收標準對照
 
 | # | 標準 | 判定方式 | 證據 | 狀態 |
 |---|---|---|---|---|
-| 1 | 員工與班別新增、編輯、停用，重開後不變；停用者不在選單，歷史保留 | 實測 | `SqliteRosterStoreTests`：`Employees_round_trip…`、`Editing_an_employee…`、`Deactivated_employee_keeps_historical_assignments`；`RosterSessionTests.Inactive_employees_are_excluded…` | 🟡 自動化通過，待人工實測 |
+| 1 | 員工與班別新增、編輯、停用，重開後不變；停用者不在選單，歷史保留 | 實測 | `SqliteRosterStoreTests`：`Employees_round_trip…`、`Editing_an_employee…`、`Deactivated_employee_keeps_historical_assignments`；`RosterSessionTests.Inactive_employees_are_excluded…`；實際 exe 操作（4.4，13 項） | ✅ |
 | 2 | 跨午夜時數與起訖正確（18:00–02:00 = 8 小時） | 單元測試 | `ShiftTimeTests.Overnight_shift_18_to_02_is_8_hours`、`Overnight_shift_ends_on_next_day` | ✅ |
-| 3 | 指派、取消指派，同格多班，格網正確 | 實測＋Headless | `MainWindowTests.Assigning_through_cell_flyout…`；`RosterSessionTests.Unassign_can_be_undone` | ✅ Headless／🟡 待人工實測 |
+| 3 | 指派、取消指派，同格多班，格網正確 | 實測＋Headless | `MainWindowTests.Assigning_through_cell_flyout…`；`RosterSessionTests.Unassign_can_be_undone`；實際 exe 操作（4.4） | ✅ |
 | 4 | 間隔規則邊界：剛好 11 小時不違規、少 1 分鐘違規、跨午夜接早班 | 單元測試 | `RestGapRuleTests.Exactly_11_hours…`、`One_minute_short_of_11_hours…`、`Closing_shift_followed_by_next_morning_shift…` | ✅ |
 | 5 | 缺少休息日邊界 | 單元測試 | `RestDayRuleTests.Six_work_days_then_a_rest_day…`、`Seven_consecutive_work_days…`、`Seventh_day_touched_only_by_overnight_tail…` | ✅ |
 | 6 | 週工時以週一起算，等於上限不違規 | 單元測試 | `WeeklyHoursRuleTests.Exactly_at_the_limit…`、`Weeks_start_on_monday_not_rolling_seven_days` | ✅ |
 | 7 | 不可上班日與重疊各自偵測、互不干擾 | 單元測試 | `UnavailableAndOverlapRuleTests`（6 個） | ✅ |
 | 8 | 人力不足與超額，各職稱分開 | 單元測試 | `StaffingRuleTests.Roles_are_counted_separately` 等 6 個 | ✅ |
-| 9 | 編輯後違規即時更新；點違規捲動並標示格子 | 實測＋Headless | `MainWindowTests.Clicking_a_violation_highlights_and_scrolls…`、`Assigning_through_cell_flyout…` | ✅ Headless／🟡 待人工實測 |
+| 9 | 編輯後違規即時更新；點違規捲動並標示格子 | 實測＋Headless | `MainWindowTests.Clicking_a_violation_highlights_and_scrolls…`、`Assigning_through_cell_flyout…`；實際 exe 操作與截圖（4.4） | ✅ |
 | 10 | 候選人只列不產生新違規者，排序穩定，無人時顯示原因 | 單元測試 | `CandidateFinderTests`（16 個，含審查後補的對稱性測試） | ✅ |
-| 11 | 撤銷／重做 ≥20 層、同步還原、新操作清空 redo | 單元測試＋實測 | `RosterSessionTests.At_least_20_levels_can_be_undone`、`Undo_restores_assignments_and_violations`、`New_operation_after_undo_clears_redo` | ✅ 單元測試／🟡 待人工實測 |
-| 12 | 各月獨立儲存、可切換、重開不變 | 實測 | `SqliteRosterStoreTests.Session_months_survive_restart_independently`；`MainWindowTests.Switching_months…` | 🟡 自動化通過，待人工實測 |
+| 11 | 撤銷／重做 ≥20 層、同步還原、新操作清空 redo | 單元測試＋實測 | `RosterSessionTests.At_least_20_levels_can_be_undone`、`Undo_restores_assignments_and_violations`、`New_operation_after_undo_clears_redo`；實際 exe 操作 25 層（4.4） | ✅ |
+| 12 | 各月獨立儲存、可切換、重開不變 | 實測 | `SqliteRosterStoreTests.Session_months_survive_restart_independently`；`MainWindowTests.Switching_months…`；實際 exe 操作含重開（4.4） | ✅ |
 | 13 | CSV 用 Excel 開中文不亂碼；ICS 可被標準解析器讀取 | 測試＋實測 | CSV：Excel 16.0 實測（4.1）＋`Output_starts_with_utf8_bom…`；ICS：Google 日曆實測（4.1）＋`Standard_parser_reads_events_with_chinese_titles…`（Ical.Net） | ✅ CSV（Excel）／✅ ICS（Google 日曆） |
 | 14 | 單元測試 ≥40 個且全數通過 | 執行測試 | 115 個通過 | ✅ |
 | 15 | Headless 測試 ≥3 個，涵蓋啟動、指派、違規顯示 | 執行測試 | 8 個通過 | ✅ |
 | 16 | README 含建置、截圖、架構、規則說明、已知限制 | 檢視 README | `README.md`、`docs/screenshots/` | ✅ |
 | 17 | GitHub Actions 綠燈、徽章、win-x64 artifact | 檢視 Actions | [run 38862401106](https://github.com/hn83320589/RosterGuard/actions/runs/38862401106)，截圖 `docs/screenshots/ci-run.png`；README 徽章指向本 repo | ✅ |
 
-## 6. 尚待人工實測
+## 6. 人工實測清單
 
-- [ ] 新增一位員工與一個跨午夜班別，關閉程式再開啟，確認資料還在；停用該員工後，確認排班選單不再出現，但既有班表仍顯示。（#1）
-- [ ] 在同一格勾選兩個班別，再取消其中一個。（#3）
-- [ ] 排一筆會違規的班，確認違規面板與格子標示立即出現；點違規項目，確認格子被捲動到並標示。（#9）
-- [ ] 連續做 20 次以上指派，按 Ctrl+Z 全部撤銷再 Ctrl+Y 重做；撤銷後做新操作，確認無法再重做。（#11）
-- [ ] 在 9 月、10 月各改一格，切換月份並重開程式確認。（#12）
+- [x] 新增一位員工與一個跨午夜班別，關閉程式再開啟，確認資料還在；停用該員工後，確認排班選單不再出現，但既有班表仍顯示。（#1，見 4.4）
+- [x] 在同一格勾選兩個班別，再取消其中一個。（#3，見 4.4）
+- [x] 排一筆會違規的班，確認違規面板與格子標示立即出現；點違規項目，確認格子被捲動到並標示。（#9，見 4.4）
+- [x] 連續做 20 次以上指派，全部撤銷再重做；撤銷後做新操作，確認無法再重做。（#11，見 4.4；以工具列按鈕操作，Ctrl+Z／Ctrl+Y 由 Headless 測試涵蓋）
+- [x] 在 9 月、10 月各改一格，切換月份並重開程式確認。（#12，見 4.4）
 - [x] 匯出 CSV 以 Excel 直接開啟。（#13，見 4.1）
 - [x] 匯出 ICS 匯入 Google 日曆，確認中文標題與跨午夜班的起訖時間。（#13，見 4.1）
 
@@ -141,3 +158,4 @@ DESCRIPTION:林建宏（內場）18:00–02:00
 - 候選人建議會擋下「這一格落在該員工既有違規範圍內」的人。若員工當天已有一班且處於違規中（例如連上第 8 天），同一天再加另一個班別也會被擋，即使連續天數不會增加。這是刻意的保守做法。
 - 修改班別的起訖時間會回溯影響所有月份的違規判定。
 - 撤銷歷史在關閉程式後不保留。
+- 實測時觀察到的無障礙問題（未修正）：月班表的格子按鈕沒有可讀的名稱，UI Automation 讀到的是 `Avalonia.Controls.Grid`；員工、班別清單項目讀到的是資料物件的 `ToString()`（例如 `Employee { Id = 10, … }`）。螢幕閱讀器使用者會聽到這些內容。修正方式是為這些控制項設定 `AutomationProperties.Name`。

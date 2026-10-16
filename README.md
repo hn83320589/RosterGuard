@@ -131,6 +131,7 @@ dotnet test
 
 - 單元測試 115 個（Core + SQLite 整合），涵蓋各規則邊界、跨日計算、候選人排序與原因、Undo/Redo（≥ 20 層、redo 清空、撤銷後違規還原）、CSV／ICS。
 - App 測試 22 個：Avalonia Headless 8 個（主視窗 5 個、啟動錯誤視窗 3 個），啟動錯誤訊息與重建按鈕條件的單元測試 14 個；另有 1 個預設不執行的截圖產生器。
+- `tests/ui-walkthrough/`：以 Windows UI Automation 操作發佈後的 exe，跑人工實測清單（員工／班別維護與重開、同格多班、違規即時更新與捲動、撤銷重做 25 層、各月獨立與重開）。不在 CI 中執行，用法見 `uia.ps1` 開頭。
 - 驗收標準逐項對照與人工實測清單見 [docs/test-report.md](docs/test-report.md)。
 
 ## CI
