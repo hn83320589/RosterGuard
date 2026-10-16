@@ -1,7 +1,7 @@
 # RosterGuard 測試報告
 
 - 日期：2026-10-16
-- 版本：`main`（本報告提交前的 HEAD 為 `ff9a04d`）
+- 版本：`main`（本機測試於 `ff9a04d` 執行，之後的 commit 僅有文件變更）
 - 環境：Windows 11 Pro 10.0.26200、.NET SDK 9.0.315
 - 執行指令：
 
@@ -20,7 +20,7 @@ dotnet publish src/RosterGuard.App -c Release -r win-x64 --self-contained true `
 | 單元測試（RosterGuard.Core.Tests） | ✅ 105／105 通過，0 略過 |
 | Headless UI 測試（RosterGuard.App.Tests） | ✅ 5／5 通過（另有 1 個截圖產生器，未設定環境變數時不做任何事，不計入） |
 | win-x64 單一執行檔發佈 | ✅ 成功，`RosterGuard.exe` 約 95 MB，啟動後主視窗正常顯示並建立資料庫 |
-| GitHub Actions | ⏳ 推上 GitHub 後執行，結果見 README 徽章 |
+| GitHub Actions | ✅ windows-latest 上全部步驟成功，產出 `RosterGuard-win-x64`、`test-results` 兩個 artifact（最新結果見 README 徽章與 [Actions 頁面](https://github.com/hn83320589/RosterGuard/actions/workflows/ci.yml)） |
 
 驗收 17 項中，可自動驗證的部分全部通過。標為「實測」的項目，目前只有自動化測試覆蓋，仍需人工點一輪（見第 4 節）。
 
@@ -66,7 +66,7 @@ dotnet publish src/RosterGuard.App -c Release -r win-x64 --self-contained true `
 | 14 | 單元測試 ≥40 個且全數通過 | 執行測試 | 105 個通過 | ✅ |
 | 15 | Headless 測試 ≥3 個，涵蓋啟動、指派、違規顯示 | 執行測試 | 5 個通過 | ✅ |
 | 16 | README 含建置、截圖、架構、規則說明、已知限制 | 檢視 README | `README.md`、`docs/screenshots/` | ✅ |
-| 17 | GitHub Actions 綠燈、徽章、win-x64 artifact | 檢視 Actions | `.github/workflows/ci.yml` | ⏳ 推上 GitHub 後確認 |
+| 17 | GitHub Actions 綠燈、徽章、win-x64 artifact | 檢視 Actions | `.github/workflows/ci.yml`；windows-latest 綠燈，README 徽章已指向本 repo，artifact `RosterGuard-win-x64` 已上傳 | ✅ |
 
 ## 4. 建議的人工實測清單
 
