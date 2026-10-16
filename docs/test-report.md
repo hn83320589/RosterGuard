@@ -1,7 +1,7 @@
 # RosterGuard 測試報告
 
 - 日期：2026-10-16（審查後修正版）
-- 版本：`main` @ `7e5ac3a`
+- 版本：`main` @ `6578cbe`
 - 環境：Windows 11 Pro 10.0.26200、.NET SDK 9.0.315、Microsoft Excel 16.0
 - 執行指令：
 
@@ -18,9 +18,9 @@ dotnet publish src/RosterGuard.App -c Release -r win-x64 --self-contained true `
 |---|---|
 | Release 建置 | ✅ 0 警告、0 錯誤（`TreatWarningsAsErrors` 開啟） |
 | 單元測試（RosterGuard.Core.Tests） | ✅ 115／115 通過，0 略過 |
-| App 測試（RosterGuard.App.Tests） | ✅ 12／12 通過：Headless 7 個（主視窗 5、啟動錯誤視窗 2）＋啟動錯誤訊息單元測試 5 個。另有 1 個截圖產生器，未設定環境變數時不做任何事，不計入 |
+| App 測試（RosterGuard.App.Tests） | ✅ 22／22 通過：Headless 8 個（主視窗 5、啟動錯誤視窗 3）＋啟動錯誤訊息與重建按鈕條件的單元測試 14 個。另有 1 個截圖產生器，未設定環境變數時不做任何事，不計入 |
 | win-x64 單一執行檔發佈 | ✅ `RosterGuard.exe` 約 95 MB；正常資料庫可開啟主視窗，損毀資料庫會顯示錯誤視窗（見 4.2） |
-| GitHub Actions | ✅ [run 38860507594](https://github.com/hn83320589/RosterGuard/actions/runs/38860507594)（commit `7e5ac3a`，windows-latest）全部步驟成功，artifact：`RosterGuard-win-x64`（44 MB，zip 壓縮後）、`test-results` |
+| GitHub Actions | ✅ [run 38862401106](https://github.com/hn83320589/RosterGuard/actions/runs/38862401106)（commit `6578cbe`，windows-latest）全部步驟成功，artifact：`RosterGuard-win-x64`（42 MB，zip 壓縮後）、`test-results`。截圖見 4.3 |
 | CSV 以 Excel 開啟 | ✅ 實際以 Excel 16.0 開啟，中文正確（見 4.1） |
 | ICS 以 Outlook 開啟 | ⚠️ 未完成：本機 Outlook 沒有設定郵件設定檔，連標準的最小 ICS 也無法開啟（見 4.1） |
 
@@ -30,6 +30,7 @@ dotnet publish src/RosterGuard.App -c Release -r win-x64 --self-contained true `
 |---|---|---|
 | 候選人建議對已有違規的員工判斷不一致：已超過週工時上限的人，缺口在週內較晚的位置時仍被推薦；已連上 7 天的人，第 8 天仍被推薦 | 除了「不產生新的違規鍵」，再要求「這一格不落在該員工任何違規的範圍內」。候選人評估改以缺口日期為中心（回報 ±7 天、讀入 ±14 天），月底缺口也會看完整個跨月週 | `CandidateFinderTests`：缺口在週內前、中、後三個位置（Theory 3 筆）、別週超時不擋人、月底跨月週、已連上 7 天 |
 | 啟動時資料庫損毀、版本不符、被鎖定或無法存取會直接崩潰 | 顯示錯誤視窗，依原因說明，提供「重試」「舊檔改名保留並重建」「結束」。舊檔改名為 `*.broken-yyyyMMdd-HHmmss`，不刪除。版本不符改用專用的 `UnsupportedSchemaException`，啟動時不必攔截所有 `InvalidOperationException` | `SqliteRosterStoreTests`：損毀檔、版本不符、改名後重建；`StartupErrorTests`：各錯誤碼的說明文字、損毀時的視窗與重建、重試仍失敗時保留原檔 |
+| 啟動錯誤視窗對「被鎖定」「沒有權限」也顯示重建按鈕，使用者可能把完好的資料庫改名移走（第二輪審查） | 「舊檔改名保留並重建」只在檔案損毀、不是資料庫、版本不符時顯示，按鈕的 Command 也同步停用；重試後錯誤類型改變時會重新判斷 | `StartupErrorTests`：9 種錯誤的按鈕條件、被鎖定時按鈕隱藏（Headless） |
 | 「複製上週」會刪除停用員工在目標週的歷史指派 | 不複製的指派（停用員工或停用班別）在目標週也不清除 | `CopyWeekCommandTests.Target_week_history_of_inactive_employees_and_shift_types_is_kept` |
 
 ## 3. 測試分布
@@ -53,8 +54,8 @@ dotnet publish src/RosterGuard.App -c Release -r win-x64 --self-contained true `
 | Seed.SampleDataTests | 5 | 範例資料與 `samples/expected-violations.md` 自動比對 |
 | **Core 小計** | **115** | |
 | MainWindowTests（Headless） | 5 | 啟動、指派＋Ctrl+Z/Y、點違規捲動、切換月份、候選人一鍵指派 |
-| StartupErrorTests | 7 | Headless 2 個（損毀時的錯誤視窗與重建、重試失敗）；錯誤說明文字 5 個 |
-| **App 小計** | **12** | |
+| StartupErrorTests | 17 | Headless 3 個（損毀時的錯誤視窗與重建、重試失敗、被鎖定時隱藏重建按鈕）；錯誤說明文字 5 個；重建按鈕條件 9 個 |
+| **App 小計** | **22** | |
 
 ## 4. 實機驗證
 
@@ -87,6 +88,14 @@ DESCRIPTION:林建宏（內場）18:00–02:00
 1. 以 `ROSTERGUARD_DB` 指向內容為純文字的 `roster.db` 啟動：程式沒有結束，視窗標題為「RosterGuard 無法開啟資料庫」。
 2. 以 Windows UI Automation 按下「舊檔改名保留並重建」：視窗切換為「班表守門員 RosterGuard」主視窗。資料夾內出現新的 `roster.db`（57,344 bytes），舊檔保留為 `roster.db.broken-20261016-141553`（57 bytes，原內容）。
 
+### 4.3 CI 執行結果
+
+以 Edge headless 截取公開的 run 頁面（未登入）：
+
+![GitHub Actions run 38862401106：build-test-publish 成功，產出 RosterGuard-win-x64 與 test-results 兩個 artifact](screenshots/ci-run.png)
+
+頁面上的 1 則 warning 是 GitHub 提示 `actions/checkout@v4`、`actions/setup-dotnet@v4` 等仍以 Node.js 20 為目標，不影響這次建置結果，本次未處理。
+
 ## 5. 驗收標準對照
 
 | # | 標準 | 判定方式 | 證據 | 狀態 |
@@ -105,9 +114,9 @@ DESCRIPTION:林建宏（內場）18:00–02:00
 | 12 | 各月獨立儲存、可切換、重開不變 | 實測 | `SqliteRosterStoreTests.Session_months_survive_restart_independently`；`MainWindowTests.Switching_months…` | 🟡 自動化通過，待人工實測 |
 | 13 | CSV 用 Excel 開中文不亂碼；ICS 可被標準解析器讀取 | 測試＋實測 | CSV：Excel 16.0 實測（4.1）＋`Output_starts_with_utf8_bom…`；ICS：`Standard_parser_reads_events_with_chinese_titles…`（Ical.Net） | ✅ CSV／🟡 ICS 未在 Outlook 或 Google 日曆實測 |
 | 14 | 單元測試 ≥40 個且全數通過 | 執行測試 | 115 個通過 | ✅ |
-| 15 | Headless 測試 ≥3 個，涵蓋啟動、指派、違規顯示 | 執行測試 | 7 個通過 | ✅ |
+| 15 | Headless 測試 ≥3 個，涵蓋啟動、指派、違規顯示 | 執行測試 | 8 個通過 | ✅ |
 | 16 | README 含建置、截圖、架構、規則說明、已知限制 | 檢視 README | `README.md`、`docs/screenshots/` | ✅ |
-| 17 | GitHub Actions 綠燈、徽章、win-x64 artifact | 檢視 Actions | [run 38860507594](https://github.com/hn83320589/RosterGuard/actions/runs/38860507594)；README 徽章指向本 repo | ✅ |
+| 17 | GitHub Actions 綠燈、徽章、win-x64 artifact | 檢視 Actions | [run 38862401106](https://github.com/hn83320589/RosterGuard/actions/runs/38862401106)，截圖 `docs/screenshots/ci-run.png`；README 徽章指向本 repo | ✅ |
 
 ## 6. 尚待人工實測
 
